@@ -57,9 +57,9 @@ namespace usrsctp {
 		// todo
 		Isolate *isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
-		Local<Value> cb_val = Local<Object>::New(isolate, instance)->Get(String::NewFromUtf8("callback"));
+		Local<Value> cb_val = Local<Object>::New(isolate, instance)->Get(String::NewFromUtf8(isolate, "callback"));
 		Local<Function> cb = Local<Function>::Cast(cb_val);
-		Buffer buf_handle = Buffer::New(String::New(isolate, buf, len));
+		Local<ArrayBuffer> buf_handle = ArrayBuffer::New(isolate, buf, len);
 		const unsigned int argc = 1;
 		Local<Value> argv[argc] = { buf_handle };
 		cb->Call(isolate->GetCurrentContext()->Global(), argc, argv);

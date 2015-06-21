@@ -30,11 +30,11 @@ namespace usrsctp {
 		std::string type_str = std::string(*String::Utf8Value(args[1]->ToString()));
 		int type = type_str == "stream" ? SOCK_STREAM : SOCK_SEQPACKET;
 		
-		Local<Function> cb = Local<Function>::Cast(args[2]);
-		Local<Object> obj = sock->GetWrapper()->ToObject();
-		obj->Set(String::NewFromUtf8("callback"), cb);
-		
 		Socket *sock = new Socket(domain, type);
+		
+		Local<Function> cb = Local<Function>::Cast(args[2]);
+		Local<Object> obj = sock->get_wrapper()->ToObject();
+		obj->Set(String::NewFromUtf8(isolate, "callback"), cb);
 		
 		args.GetReturnValue().Set(obj);
 	}

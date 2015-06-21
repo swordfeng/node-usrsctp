@@ -10,7 +10,7 @@ namespace usrsctp {
 	size_t Socket::recv_len;
 	
 	void Socket::recv_async_cb(uv_async_t *handle) {
-		sock->recv_cb(recv_buf, recv_len);
+		sock->get_wrapper()->recv_cb(recv_buf, recv_len);
 		recv_buf = nullptr;
 		uv_mutex_unlock(&recv_lock);
 	}
@@ -36,13 +36,13 @@ namespace usrsctp {
 
 	void Socket::Init() {
 		sock = nullptr;
-		buf = nullptr;
-		len = 0;
+		recv_buf = nullptr;
+		recv_len = 0;
 		uv_async_init(uv_default_loop(), &recv_event, recv_async_cb);
 		uv_mutex_init(&recv_lock);
 	}
 	
-	Socket::Socket(int af, int type): callback(nullptr) {
+	Socket::Socket(int af, int type) {
 		sd = usrsctp_socket(af, type, IPPROTO_SCTP, receive_cb, nullptr, 0, nullptr);
 		// if (!sd) ...
 		socket_map.insert(std::make_pair(sd, this));
@@ -53,12 +53,13 @@ namespace usrsctp {
 		// todo
 	}
 	
-	SocketWrapper *Socket::GetWrapper() {
+	SocketWrapper *Socket::get_wrapper() {
 		return wrapper;
 	}
 	
 	//usrsctp_sendv
 	ssize_t Socket::send(const void *buf, size_t len) {
+		// todo
 	}
 	
 }

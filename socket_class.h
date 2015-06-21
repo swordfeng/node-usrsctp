@@ -26,7 +26,7 @@ namespace usrsctp {
 			static size_t recv_len;
 		public:
 			Socket(int af, int type);
-			SocketWrapper *GetWrapper();
+			SocketWrapper *get_wrapper();
 			~Socket();
 			ssize_t send(const void *buf, size_t len);
 		private:
