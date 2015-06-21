@@ -22,12 +22,13 @@ namespace usrsctp {
 			static Socket *sock;
 			static uv_mutex_t recv_lock;
 			static uv_async_t recv_event;
-			static void *buf;
-			static size_t len;
+			static void *recv_buf;
+			static size_t recv_len;
 		public:
 			Socket(int af, int type);
 			SocketWrapper *GetWrapper();
 			~Socket();
+			ssize_t send(const void *buf, size_t len);
 		private:
 			struct socket *sd;
 			SocketWrapper *wrapper;

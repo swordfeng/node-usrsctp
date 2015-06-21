@@ -22,9 +22,11 @@ namespace usrsctp {
 			SocketWrapper(Socket *sock);
 			Local<Object> ToObject();
 			Socket *GetSocket();
+			void recv_cb(void *buf, size_t len);
 		private:
 			~SocketWrapper();
 			Socket *sock;
+			UniquePersistent<Object> instance;
     };
 }
 
