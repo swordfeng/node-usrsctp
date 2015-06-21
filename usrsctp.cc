@@ -36,7 +36,7 @@ namespace usrsctp {
 		
 		Socket *sock = new Socket(domain, type);
 		
-		args.GetReturnValue().Set();
+		args.GetReturnValue().Set(obj);
 	}
 
 	//usrsctp_sendv
