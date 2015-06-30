@@ -1,4 +1,5 @@
 #include "socket_wrapper_class.h"
+#include <node_buffer.h>
 
 namespace usrsctp {
 	using namespace v8;
@@ -59,11 +60,15 @@ namespace usrsctp {
 		HandleScope scope(isolate);
 		Local<Value> cb_val = Local<Object>::New(isolate, instance)->Get(String::NewFromUtf8(isolate, "callback"));
 		Local<Function> cb = Local<Function>::Cast(cb_val);
-		Local<ArrayBuffer> buf_handle = ArrayBuffer::New(isolate, buf, len);
+		// warning: this may not work on other versions of node.js
+		// if this problem is critical, it should be changed in the future
+		Local<Object> buf_handle = Buffer::New(isolate, static_cast<const char*>(buf), len);
 		const unsigned int argc = 1;
 		Local<Value> argv[argc] = { buf_handle };
 		cb->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 		free(buf);
 	}
+	
+	//notif
 }
 

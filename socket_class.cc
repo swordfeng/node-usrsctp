@@ -18,7 +18,10 @@ namespace usrsctp {
 	int Socket::receive_cb(struct socket *sd, union sctp_sockstore addr,
 			void *data,	size_t datalen, struct sctp_rcvinfo rcv, int flags, 
 			void *ulp_info) {
-		if (data) {
+		if (flags & MSG_NOTIFICATION) {
+			// todo: notification
+			// sender_dry, send_failed, shutdown
+		} else if (data) {
 			// data
 			uv_mutex_lock(&recv_lock);
 			auto socket_item = socket_map.find(sd);
@@ -29,7 +32,7 @@ namespace usrsctp {
 			// todo: other recv info
 			uv_async_send(&recv_event);
 		} else {
-			// todo: notification
+			// what's wrong?
 		}
 		return 1;
 	}
@@ -43,6 +46,8 @@ namespace usrsctp {
 	}
 	
 	Socket::Socket(int af, int type) {
+		this->af = af;
+		this->type = type;
 		sd = usrsctp_socket(af, type, IPPROTO_SCTP, receive_cb, nullptr, 0, nullptr);
 		// if (!sd) ...
 		socket_map.insert(std::make_pair(sd, this));
@@ -57,9 +62,16 @@ namespace usrsctp {
 		return wrapper;
 	}
 	
-	//usrsctp_sendv
-	ssize_t Socket::send(const void *buf, size_t len) {
-		// todo
+	struct socket *Socket::get_sd() {
+		return sd;
+	}
+	
+	int Socket::get_af() {
+		return af;
+	}
+	
+	int Socket::get_type() {
+		return type;
 	}
 	
 }

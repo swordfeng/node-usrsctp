@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <uv.h>
+#include <usrsctp.h>
 #include "socket_wrapper_class.h"
 
 namespace usrsctp {
@@ -27,11 +28,18 @@ namespace usrsctp {
 		public:
 			Socket(int af, int type);
 			SocketWrapper *get_wrapper();
+			struct socket *get_sd();
+			int get_af();
+			int get_type();
+			inline operator struct socket *() {
+				return sd;
+			}
 			~Socket();
-			ssize_t send(const void *buf, size_t len);
 		private:
 			struct socket *sd;
 			SocketWrapper *wrapper;
+			int af;
+			int type;
 	};
 }
 
