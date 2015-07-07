@@ -38,7 +38,7 @@ namespace usrsctp {
 		Local<Function> cons = Local<FunctionTemplate>::New(isolate, constructor_tpl)->GetFunction();
 		Local<Object> inst_local = cons->NewInstance();
 		Wrap(inst_local);
-		inst_local->Set(String::NewFromUtf8(isolate, "type"), String::NewFromUtf8(isolate, "usrsctp_socket"));
+		//inst_local->Set(String::NewFromUtf8(isolate, "type"), String::NewFromUtf8(isolate, "usrsctp_socket"));
 		instance.Reset(isolate, inst_local);
 	}
 	

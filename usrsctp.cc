@@ -4,6 +4,12 @@
 #include <node_buffer.h>
 #include <usrsctp.h>
 #include "socket_class.h"
+#include <iostream>
+#include <cassert>
+#include <cerrno>
+using std::cout;
+using std::endl;
+using std::cerr;
 
 namespace usrsctp {
 	using namespace v8;
@@ -13,13 +19,15 @@ namespace usrsctp {
 		Isolate* isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
 		uint32_t udp_port = args[0]->Uint32Value();
+		
+		cout << "init(" << udp_port << ");" << endl;
+		
 		if (udp_port > 65536) {
 			isolate->ThrowException(Exception::TypeError(
 				String::NewFromUtf8(isolate, "Invalid port number")));
 			return;
 		}
 		usrsctp_init(static_cast<uint16_t>(udp_port), nullptr, nullptr);
-		args.GetReturnValue().Set(Undefined(isolate));
 	}
 
 	//usrsctp_socket
@@ -27,6 +35,8 @@ namespace usrsctp {
 	void socket(const FunctionCallbackInfo<Value>& args) {
 		Isolate* isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
+		
+		cout << "socket(...);" << endl;
 		
 		int domain = args[0]->Uint32Value() == 4 ? AF_INET : AF_INET6;
 		
@@ -38,6 +48,7 @@ namespace usrsctp {
 		int type = SOCK_SEQPACKET;
 		
 		Socket *sock = new Socket(domain, type);
+		cout << "sd: " << sock->get_sd() << endl;
 		
 		const int on = 1;
 		if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
@@ -83,11 +94,14 @@ namespace usrsctp {
 		snd_info.snd_context = 0; // not used now
 		snd_info.snd_assoc_id = 0; // assoc_id
 		
-		usrsctp_sendv(*sock, Buffer::Data(buffer) + start, len, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
+		if (usrsctp_sendv(*sock, Buffer::Data(buffer) + start, len, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0) < 0) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
+			return;
+		}
 	}
 	
-	//usrsctp_bindx
-	//.bind(socket, addr, port, flag = true (add), false (remove))
+	//usrsctp_bind
+	//.bind(socket, addr, port)
 	void bind(const FunctionCallbackInfo<Value>& args) {
 		Isolate* isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
@@ -102,39 +116,128 @@ namespace usrsctp {
 		
 		struct sockaddr_storage saddr;
 		memset(&saddr, 0, sizeof(struct sockaddr_storage));
+		std::string addrstr = *String::Utf8Value(args[1]->ToString());
+		in_port_t port = htons(static_cast<uint16_t>(args[2]->Uint32Value()));
+		socklen_t slen;
+		
+		int err;
+		if (sock->get_af() == AF_INET) {
+			// ipv4
+			struct sockaddr_in *saddr4 = (struct sockaddr_in *)(&saddr);
+			saddr4->sin_family = AF_INET;
+			saddr4->sin_port = port;
+			cout << addrstr << endl;
+			err = inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
+			slen = sizeof(struct sockaddr_in);
+		} else if (sock->get_af() == AF_INET6) {
+			// ipv6
+			struct sockaddr_in6 *saddr6 = (struct sockaddr_in6 *)(&saddr);
+			saddr6->sin6_family = AF_INET6;
+			saddr6->sin6_port = port;
+			err = inet_pton(AF_INET6, addrstr.c_str(), &saddr6->sin6_addr);
+			slen = sizeof(struct sockaddr_in6);
+		} else {
+			// error
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Unexpected Error")));
+			return;
+		}
+		
+		if (err != 1) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid address")));
+			return;
+		}
+		
+		//bool flag = args[3]->ToBoolean()->Value();
+		
+		//usrsctp_bindx not supported?
+		//usrsctp_bindx(*sock, (struct sockaddr *)&saddr, 1, SCTP_BINDX_ADD_ADDR);
+		if (usrsctp_bind(*sock, (struct sockaddr *)&saddr, slen) < 0) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
+			return;
+		}
+	}
+	
+	//usrsctp_listen
+	//.listen(socket, flag = true (on), false (off))
+	//create accept thread when needed
+	void listen(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = Isolate::GetCurrent();
+		HandleScope scope(isolate);
+		
+		SocketWrapper *wrapper = SocketWrapper::FromObject(args[0]->ToObject());
+		if (!wrapper) return;
+		Socket *sock = wrapper->GetSocket();
+		if (!sock) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Socket is no longer valid")));
+			return;
+		}
+		
+		bool flag = args[1]->ToBoolean()->Value();
+		
+		if (usrsctp_listen(*sock, flag ? 1 : 0) < 0) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
+			return;
+		}
+		
+		if (sock->get_type() == SOCK_STREAM) {
+			// todo: needs accept
+		}
+	}
+	
+	//usrsctp_peeloff
+	//.peeloff(socket, assoc_id)
+	
+	//usrsctp_connectx
+	//.connect(socket, addr, port)
+	void connect(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = Isolate::GetCurrent();
+		HandleScope scope(isolate);
+		
+		SocketWrapper *wrapper = SocketWrapper::FromObject(args[0]->ToObject());
+		if (!wrapper) return;
+		Socket *sock = wrapper->GetSocket();
+		if (!sock) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Socket is no longer valid")));
+			return;
+		}
+		
+		// todo: support multiple addresses
+		struct sockaddr_storage saddr;
+		memset(&saddr, 0, sizeof(struct sockaddr_storage));
 		char *addrstr = *String::Utf8Value(args[1]->ToString());
 		in_port_t port = htons(static_cast<uint16_t>(args[2]->Uint32Value()));
+		int err;
 		
 		if (sock->get_af() == AF_INET) {
 			// ipv4
 			struct sockaddr_in *saddr4 = (struct sockaddr_in *)(&saddr);
 			saddr4->sin_family = AF_INET;
 			saddr4->sin_port = port;
-			int err = inet_pton(AF_INET, addrstr, &saddr4->sin_addr);
+			err = inet_pton(AF_INET, addrstr, &saddr4->sin_addr);
 		} else if (sock->get_af() == AF_INET6) {
 			// ipv6
 			struct sockaddr_in6 *saddr6 = (struct sockaddr_in6 *)(&saddr);
 			saddr6->sin6_family = AF_INET6;
 			saddr6->sin6_port = port;
-			int err = inet_pton(AF_INET, addrstr, &saddr6->sin6_addr);
+			err = inet_pton(AF_INET, addrstr, &saddr6->sin6_addr);
 		} else {
 			// error
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Unexpected Error")));
+			return;
 		}
 		
-		bool flag = args[3]->ToBoolean()->Value();
+		if (err != 1) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid address")));
+			return;
+		}
 		
-		usrsctp_bindx(*sock, (struct sockaddr *)&saddr, 1, flag ? SCTP_BINDX_ADD_ADDR : SCTP_BINDX_REM_ADDR);
+		sctp_assoc_t assoc_id;
+		if (usrsctp_connectx(*sock, (struct sockaddr *)&saddr, 1, &assoc_id) < 0) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
+			return;
+		}
+		args.GetReturnValue().Set(Number::New(isolate, assoc_id));
 	}
-	
-	//usrsctp_listen
-	//.listen(socket, flag = true (on), false (off))
-	//create accept thread when needed
-	
-	//usrsctp_peeloff
-	//.peeloff(socket, assoc_id)
-	
-	//usrsctp_connectx
-	//.connect(socket, addrs)
 
 	void Init(Handle<Object> exports) {
 		Socket::Init();
@@ -142,6 +245,9 @@ namespace usrsctp {
 		NODE_SET_METHOD(exports, "init", init);
 		NODE_SET_METHOD(exports, "socket", socket);
 		NODE_SET_METHOD(exports, "send", send);
+		NODE_SET_METHOD(exports, "bind", bind);
+		NODE_SET_METHOD(exports, "listen", listen);
+		NODE_SET_METHOD(exports, "connect", connect);
 	}
 
 	NODE_MODULE(usrsctp, Init)
