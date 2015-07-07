@@ -1,4 +1,5 @@
 #include "socket_class.h"
+#include <iostream>
 
 namespace usrsctp {
 	
@@ -10,6 +11,7 @@ namespace usrsctp {
 	size_t Socket::recv_len;
 	
 	void Socket::recv_async_cb(uv_async_t *handle) {
+		std::cout << "async recv" << std::endl;
 		sock->get_wrapper()->recv_cb(recv_buf, recv_len);
 		recv_buf = nullptr;
 		uv_mutex_unlock(&recv_lock);
@@ -18,21 +20,24 @@ namespace usrsctp {
 	int Socket::receive_cb(struct socket *sd, union sctp_sockstore addr,
 			void *data,	size_t datalen, struct sctp_rcvinfo rcv, int flags, 
 			void *ulp_info) {
-		if (flags & MSG_NOTIFICATION) {
-			// todo: notification
-			// sender_dry, send_failed, shutdown
-		} else if (data) {
-			// data
-			uv_mutex_lock(&recv_lock);
-			auto socket_item = socket_map.find(sd);
-			// if (socket_item == std::unordered_map::end) ...
-			sock = socket_item->second;
-			recv_buf = data;
-			recv_len = datalen;
-			// todo: other recv info
-			uv_async_send(&recv_event);
+		if (data) {
+			if (flags & MSG_NOTIFICATION) {
+				// todo: notification
+				// sender_dry, send_failed, shutdown
+				std::cout << "notif" << std::endl;
+			} else {
+				// data
+				uv_mutex_lock(&recv_lock);
+				auto socket_item = socket_map.find(sd);
+				// if (socket_item == std::unordered_map::end) ...
+				sock = socket_item->second;
+				recv_buf = data;
+				recv_len = datalen;
+				// todo: other recv info
+				uv_async_send(&recv_event);
+			}
 		} else {
-			// what's wrong?
+			std::cout << "no data" << std::endl;
 		}
 		return 1;
 	}

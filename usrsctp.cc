@@ -58,6 +58,26 @@ namespace usrsctp {
 			// ??
 		}
 		
+		struct sctp_event event;
+		uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+						  SCTP_PEER_ADDR_CHANGE,
+						  SCTP_REMOTE_ERROR,
+						  SCTP_SHUTDOWN_EVENT,
+						  SCTP_ADAPTATION_INDICATION,
+						  SCTP_PARTIAL_DELIVERY_EVENT,
+						  SCTP_SENDER_DRY_EVENT,
+						  SCTP_SEND_FAILED_EVENT};
+		memset(&event, 0, sizeof(event));
+		event.se_assoc_id = SCTP_FUTURE_ASSOC;
+		event.se_on = 1;
+		for (size_t i = 0; i < sizeof(event_types) / sizeof(uint16_t); i++) {
+			event.se_type = event_types[i];
+			if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(struct sctp_event)) < 0) {
+				perror("usrsctp_setsockopt SCTP_EVENT");
+			}
+		}
+		
+		
 		Local<Object> obj = sock->get_wrapper()->ToObject();
 		/*
 		Local<Function> cb = Local<Function>::Cast(args[2]);
@@ -92,12 +112,14 @@ namespace usrsctp {
 		snd_info.snd_flags = 0;
 		snd_info.snd_ppid = 0; // ppid
 		snd_info.snd_context = 0; // not used now
-		snd_info.snd_assoc_id = 0; // assoc_id
+		snd_info.snd_assoc_id = options->Get(String::NewFromUtf8(isolate, "assoc_id"))->Uint32Value(); // assoc_id
 		
-		if (usrsctp_sendv(*sock, Buffer::Data(buffer) + start, len, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0) < 0) {
+		ssize_t sendlen = usrsctp_sendv(*sock, Buffer::Data(buffer) + start, len, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
+		if (sendlen < 0) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 			return;
 		}
+		cout << len << endl;
 	}
 	
 	//usrsctp_bind
@@ -188,7 +210,7 @@ namespace usrsctp {
 	//.peeloff(socket, assoc_id)
 	
 	//usrsctp_connectx
-	//.connect(socket, addr, port)
+	//.connect(socket, addr, port, encap_port)
 	void connect(const FunctionCallbackInfo<Value>& args) {
 		Isolate* isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
@@ -204,8 +226,9 @@ namespace usrsctp {
 		// todo: support multiple addresses
 		struct sockaddr_storage saddr;
 		memset(&saddr, 0, sizeof(struct sockaddr_storage));
-		char *addrstr = *String::Utf8Value(args[1]->ToString());
+		std::string addrstr = *String::Utf8Value(args[1]->ToString());
 		in_port_t port = htons(static_cast<uint16_t>(args[2]->Uint32Value()));
+		in_port_t encap_port = htons(static_cast<uint16_t>(args[3]->Uint32Value()));
 		int err;
 		
 		if (sock->get_af() == AF_INET) {
@@ -213,13 +236,13 @@ namespace usrsctp {
 			struct sockaddr_in *saddr4 = (struct sockaddr_in *)(&saddr);
 			saddr4->sin_family = AF_INET;
 			saddr4->sin_port = port;
-			err = inet_pton(AF_INET, addrstr, &saddr4->sin_addr);
+			err = inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
 		} else if (sock->get_af() == AF_INET6) {
 			// ipv6
 			struct sockaddr_in6 *saddr6 = (struct sockaddr_in6 *)(&saddr);
 			saddr6->sin6_family = AF_INET6;
 			saddr6->sin6_port = port;
-			err = inet_pton(AF_INET, addrstr, &saddr6->sin6_addr);
+			err = inet_pton(AF_INET6, addrstr.c_str(), &saddr6->sin6_addr);
 		} else {
 			// error
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Unexpected Error")));
@@ -231,11 +254,22 @@ namespace usrsctp {
 			return;
 		}
 		
+		struct sctp_udpencaps encaps;
+		memcpy(&encaps.sue_address, &saddr, sizeof(struct sockaddr_storage));
+		encaps.sue_assoc_id = SCTP_FUTURE_ASSOC;
+		encaps.sue_port = encap_port;
+		cout << encap_port << endl;
+		if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Fail to set Remote Encapsulation Port")));
+			return;
+		}
+		
 		sctp_assoc_t assoc_id;
 		if (usrsctp_connectx(*sock, (struct sockaddr *)&saddr, 1, &assoc_id) < 0) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 			return;
 		}
+		
 		args.GetReturnValue().Set(Number::New(isolate, assoc_id));
 	}
 
