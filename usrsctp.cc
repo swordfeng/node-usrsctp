@@ -20,8 +20,6 @@ namespace usrsctp {
 		HandleScope scope(isolate);
 		uint32_t udp_port = args[0]->Uint32Value();
 		
-		cout << "init(" << udp_port << ");" << endl;
-		
 		if (udp_port > 65536) {
 			isolate->ThrowException(Exception::TypeError(
 				String::NewFromUtf8(isolate, "Invalid port number")));
@@ -36,19 +34,15 @@ namespace usrsctp {
 		Isolate* isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
 		
-		cout << "socket(...);" << endl;
-		
 		int domain = args[0]->Uint32Value() == 4 ? AF_INET : AF_INET6;
 		
 		/*
-		std::string type_str = std::string(*String::Utf8Value(args[1]->ToString()));
 		int type = type_str == "stream" ? SOCK_STREAM : SOCK_SEQPACKET;
 		*/
 		// now we only support creating one-to-many socket
 		int type = SOCK_SEQPACKET;
 		
 		Socket *sock = new Socket(domain, type);
-		cout << "sd: " << sock->get_sd() << endl;
 		
 		const int on = 1;
 		if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
@@ -65,6 +59,7 @@ namespace usrsctp {
 						  SCTP_SHUTDOWN_EVENT,
 						  SCTP_ADAPTATION_INDICATION,
 						  SCTP_PARTIAL_DELIVERY_EVENT,
+						  SCTP_AUTHENTICATION_EVENT,
 						  SCTP_SENDER_DRY_EVENT,
 						  SCTP_SEND_FAILED_EVENT};
 		memset(&event, 0, sizeof(event));
@@ -73,22 +68,16 @@ namespace usrsctp {
 		for (size_t i = 0; i < sizeof(event_types) / sizeof(uint16_t); i++) {
 			event.se_type = event_types[i];
 			if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(struct sctp_event)) < 0) {
-				perror("usrsctp_setsockopt SCTP_EVENT");
+				// ??
 			}
 		}
 		
-		
 		Local<Object> obj = sock->get_wrapper()->ToObject();
-		/*
-		Local<Function> cb = Local<Function>::Cast(args[2]);
-		obj->Set(String::NewFromUtf8(isolate, "callback"), cb);
-		*/
-		
 		args.GetReturnValue().Set(obj);
 	}
 
 	//usrsctp_sendv
-	//.send(socket, {assoc_id:0, stream_id:0, ppid:0, context(use with notif), flags}, buffer, start, length)
+	//.send(socket, {assoc_id:0, stream_id:0, ppid:0, unordered:false}, buffer, start, length)
 	void send(const FunctionCallbackInfo<Value>& args) {
 		Isolate* isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
@@ -97,7 +86,7 @@ namespace usrsctp {
 		if (!wrapper) return;
 		Socket *sock = wrapper->GetSocket();
 		if (!sock) {
-			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Socket is no longer valid")));
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid socket")));
 			return;
 		}
 		
@@ -108,9 +97,11 @@ namespace usrsctp {
 		
 		// make snd_info
 		struct sctp_sndinfo snd_info;
-		snd_info.snd_sid = 0; // stream_id
+		snd_info.snd_sid = options->Get(String::NewFromUtf8(isolate, "stream_id"))->Uint32Value(); // stream_id
 		snd_info.snd_flags = 0;
-		snd_info.snd_ppid = 0; // ppid
+		if (options->Get(String::NewFromUtf8(isolate, "unordered"))->ToBoolean()->Value()) snd_info.snd_flags |= SCTP_UNORDERED;
+		// todo: sendall, addr_over
+		snd_info.snd_ppid = htonl(options->Get(String::NewFromUtf8(isolate, "ppid"))->Uint32Value()); // ppid
 		snd_info.snd_context = 0; // not used now
 		snd_info.snd_assoc_id = options->Get(String::NewFromUtf8(isolate, "assoc_id"))->Uint32Value(); // assoc_id
 		
@@ -119,7 +110,6 @@ namespace usrsctp {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 			return;
 		}
-		cout << len << endl;
 	}
 	
 	//usrsctp_bind
@@ -132,7 +122,7 @@ namespace usrsctp {
 		if (!wrapper) return;
 		Socket *sock = wrapper->GetSocket();
 		if (!sock) {
-			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Socket is no longer valid")));
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid socket")));
 			return;
 		}
 		
@@ -172,7 +162,7 @@ namespace usrsctp {
 		//bool flag = args[3]->ToBoolean()->Value();
 		
 		//usrsctp_bindx not supported?
-		//usrsctp_bindx(*sock, (struct sockaddr *)&saddr, 1, SCTP_BINDX_ADD_ADDR);
+		//usrsctp_bindx(*sock, (struct sockaddr *)&saddr, ???, SCTP_BINDX_ADD_ADDR);
 		if (usrsctp_bind(*sock, (struct sockaddr *)&saddr, slen) < 0) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 			return;
@@ -190,7 +180,7 @@ namespace usrsctp {
 		if (!wrapper) return;
 		Socket *sock = wrapper->GetSocket();
 		if (!sock) {
-			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Socket is no longer valid")));
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid socket")));
 			return;
 		}
 		
@@ -219,7 +209,7 @@ namespace usrsctp {
 		if (!wrapper) return;
 		Socket *sock = wrapper->GetSocket();
 		if (!sock) {
-			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Socket is no longer valid")));
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid socket")));
 			return;
 		}
 		
@@ -258,7 +248,6 @@ namespace usrsctp {
 		memcpy(&encaps.sue_address, &saddr, sizeof(struct sockaddr_storage));
 		encaps.sue_assoc_id = SCTP_FUTURE_ASSOC;
 		encaps.sue_port = encap_port;
-		cout << encap_port << endl;
 		if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Fail to set Remote Encapsulation Port")));
 			return;
@@ -272,6 +261,49 @@ namespace usrsctp {
 		
 		args.GetReturnValue().Set(Number::New(isolate, assoc_id));
 	}
+	
+	void end(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = Isolate::GetCurrent();
+		HandleScope scope(isolate);
+		
+		SocketWrapper *wrapper = SocketWrapper::FromObject(args[0]->ToObject());
+		if (!wrapper) return;
+		Socket *sock = wrapper->GetSocket();
+		if (!sock) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid socket")));
+			return;
+		}
+		sctp_assoc_t assoc_id = static_cast<sctp_assoc_t>(args[1]->Uint32Value());
+		// make snd_info
+		struct sctp_sndinfo snd_info;
+		memset(&snd_info, 0, sizeof(struct sctp_sndinfo));
+		snd_info.snd_flags = SCTP_EOF;
+		snd_info.snd_assoc_id = assoc_id;
+		
+		usrsctp_sendv(*sock, nullptr, 0, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
+	}
+		
+		
+	void close(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = Isolate::GetCurrent();
+		HandleScope scope(isolate);
+		
+		SocketWrapper *wrapper = SocketWrapper::FromObject(args[0]->ToObject());
+		if (!wrapper) return;
+		Socket *sock = wrapper->GetSocket();
+		if (!sock) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid socket")));
+			return;
+		}
+		sctp_assoc_t assoc_id = static_cast<sctp_assoc_t>(args[1]->Uint32Value());
+		// make snd_info
+		struct sctp_sndinfo snd_info;
+		memset(&snd_info, 0, sizeof(struct sctp_sndinfo));
+		snd_info.snd_flags = SCTP_EOF;
+		snd_info.snd_assoc_id = assoc_id;
+		
+		usrsctp_sendv(*sock, nullptr, 0, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
+	}
 
 	void Init(Handle<Object> exports) {
 		Socket::Init();
@@ -282,6 +314,8 @@ namespace usrsctp {
 		NODE_SET_METHOD(exports, "bind", bind);
 		NODE_SET_METHOD(exports, "listen", listen);
 		NODE_SET_METHOD(exports, "connect", connect);
+		NODE_SET_METHOD(exports, "close", close);
+		NODE_SET_METHOD(exports, "end", end);
 	}
 
 	NODE_MODULE(usrsctp, Init)

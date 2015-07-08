@@ -1,16 +1,22 @@
 var usrsctp = require('./build/Release/usrsctp');
 
 
-usrsctp.init(9988);
-var t = usrsctp.socket(6, "seqpacket");
+usrsctp.init(10000+parseInt(Math.random()*10000));
+var t = usrsctp.socket(4, "seqpacket");
 console.log(t);
 
 console.log("connect");
-var aid = usrsctp.connect(t, '::1', 1234, 9899);
+var aid = usrsctp.connect(t, '127.0.0.1', 1234, 9899);
 
 console.log(aid);
 
-setInterval(function(){usrsctp.send(t, {assoc_id:aid, stream_id:0, ppid:0, context:0, flags:0}, new Buffer('hello world','utf8'), 0, 11);}, 200);
+var i=0;
 
+setInterval(function(){
+	if (i++%2)
+usrsctp.send(t, {assoc_id:aid, stream_id:2, ppid:1234, unordered:true}, new Buffer(131072), 0, 131072);
+else
+usrsctp.send(t, {assoc_id:aid, stream_id:2, ppid:1234, unordered:false}, new Buffer(131072), 0, 131072);
+},200);
 
 

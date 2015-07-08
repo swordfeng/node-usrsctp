@@ -13,6 +13,7 @@ namespace usrsctp {
 	class Socket {
 		public:
 			static void Init();
+			static void Exit();
 		private:
 			static void recv_async_cb(uv_async_t *handle);
 			static int receive_cb(struct socket *sd, union sctp_sockstore addr,
@@ -25,6 +26,9 @@ namespace usrsctp {
 			static uv_async_t recv_event;
 			static void *recv_buf;
 			static size_t recv_len;
+			static int recv_flags; 
+			static struct sctp_rcvinfo recv_info;
+			static struct sockaddr_storage recv_addr;
 		public:
 			Socket(int af, int type);
 			SocketWrapper *get_wrapper();
