@@ -45,10 +45,15 @@ namespace usrsctp {
 	}
 	
 	SocketWrapper::~SocketWrapper() {
+		std::cout << "SocketWrapper deleted" << std::endl;
 	}
 
 	Socket *SocketWrapper::GetSocket() {
 		return sock;
+	}
+	
+	void SocketWrapper::SetInvalid() {
+		sock = nullptr;
 	}
 
 	Local<Object> SocketWrapper::ToObject() {
@@ -75,16 +80,6 @@ namespace usrsctp {
 		info_obj->Set(String::NewFromUtf8(isolate, "assoc_id"), Number::New(isolate, info->rcv_assoc_id));
 		info_obj->Set(String::NewFromUtf8(isolate, "unordered"), Boolean::New(isolate, (info->rcv_flags & SCTP_UNORDERED) != 0));
 		info_obj->Set(String::NewFromUtf8(isolate, "completed"), Boolean::New(isolate, (flags & MSG_EOR) != 0));
-		
-		struct sctp_udpencaps encaps;
-		memcpy(&encaps.sue_address, addr, sizeof(struct sockaddr_storage));
-		encaps.sue_assoc_id = info->rcv_assoc_id;
-		encaps.sue_port = 0;
-		socklen_t encaps_len = (socklen_t)sizeof(struct sctp_udpencaps);
-		if (usrsctp_getsockopt(*sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, &encaps, &encaps_len) < 0) {
-			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Fail to get Remote Encapsulation Port")));
-		}
-		info_obj->Set(String::NewFromUtf8(isolate, "encap_port"), Number::New(isolate, encaps.sue_port));
 		
 		const unsigned int argc = 2;
 		Local<Value> argv[argc] = { buf_handle, info_obj };
@@ -150,6 +145,18 @@ namespace usrsctp {
 				break;
 			CASETYPE(SCTP_SHUTDOWN_EVENT)
 				break;
+			CASETYPE(SCTP_SEND_FAILED_EVENT)
+				break;
+			CASETYPE(SCTP_REMOTE_ERROR)
+				break;
+			CASETYPE(SCTP_ADAPTATION_INDICATION)
+				break;
+			CASETYPE(SCTP_PARTIAL_DELIVERY_EVENT)
+				break;
+			CASETYPE(SCTP_AUTHENTICATION_EVENT)
+				break;
+			CASETYPE(SCTP_NOTIFICATIONS_STOPPED_EVENT)
+				break;
 		}
 
 #undef CASETYPE
@@ -158,20 +165,6 @@ namespace usrsctp {
 		const unsigned int argc = 1;
 		Local<Value> argv[argc] = { notif_obj };
 		cb->Call(isolate->GetCurrentContext()->Global(), argc, argv);
-		
-		// todo: clean up
-#define p(x) if (notification->sn_header.sn_type == x) { \
-	std::cout << #x << std::endl; \
-}
-		p(SCTP_ASSOC_CHANGE);
-		p(SCTP_PEER_ADDR_CHANGE);
-		p(SCTP_REMOTE_ERROR);
-		p(SCTP_SHUTDOWN_EVENT);
-		p(SCTP_ADAPTATION_INDICATION);
-		p(SCTP_PARTIAL_DELIVERY_EVENT);
-		p(SCTP_SENDER_DRY_EVENT);
-		p(SCTP_SEND_FAILED_EVENT);
-#undef p
 	}
 }
 
