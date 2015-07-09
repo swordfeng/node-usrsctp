@@ -138,7 +138,6 @@ namespace usrsctp {
 			struct sockaddr_in *saddr4 = (struct sockaddr_in *)(&saddr);
 			saddr4->sin_family = AF_INET;
 			saddr4->sin_port = port;
-			cout << addrstr << endl;
 			err = inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
 			slen = sizeof(struct sockaddr_in);
 		} else if (sock->get_af() == AF_INET6) {

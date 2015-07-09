@@ -13,10 +13,6 @@ console.log(aid);
 var i=0;
 
 setInterval(function(){
-	if (i++%2)
-usrsctp.send(t, {assoc_id:aid, stream_id:2, ppid:1234, unordered:true}, new Buffer(131072), 0, 131072);
-else
+	
 usrsctp.send(t, {assoc_id:aid, stream_id:2, ppid:1234, unordered:false}, new Buffer(131072), 0, 131072);
 },200);
-
-

@@ -2,6 +2,7 @@
 #include <node_buffer.h>
 #include <iostream>
 #include <cstring>
+#include <iomanip>
 
 namespace usrsctp {
 	using namespace v8;
@@ -131,7 +132,6 @@ namespace usrsctp {
 						&((struct sockaddr_in6 *)(&notification->sn_paddr_change.spc_aaddr))->sin6_addr,
 						aaddr, 50);
 				}
-				printf("%d\n", AF_INET6);
 				switch (notification->sn_paddr_change.spc_state) {
 					CASESTATE(SCTP_ADDR_AVAILABLE);
 					CASESTATE(SCTP_ADDR_UNREACHABLE);
