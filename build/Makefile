@@ -313,8 +313,8 @@ ifeq ($(strip $(foreach prefix,$(NO_LOAD),\
 endif
 
 quiet_cmd_regen_makefile = ACTION Regenerating $@
-cmd_regen_makefile = cd $(srcdir); /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py -fmake --ignore-environment "--toplevel-dir=." -I/home/swordfeng/Projects/node-usrsctp/build/config.gypi -I/usr/lib/node_modules/npm/node_modules/node-gyp/addon.gypi -I/home/swordfeng/.node-gyp/0.12.5/common.gypi "--depth=." "-Goutput_dir=." "--generator-output=build" "-Dlibrary=shared_library" "-Dvisibility=default" "-Dnode_root_dir=/home/swordfeng/.node-gyp/0.12.5" "-Dmodule_root_dir=/home/swordfeng/Projects/node-usrsctp" binding.gyp
-Makefile: $(srcdir)/../../../../usr/lib/node_modules/npm/node_modules/node-gyp/addon.gypi $(srcdir)/../../.node-gyp/0.12.5/common.gypi $(srcdir)/usrsctplib.gyp $(srcdir)/binding.gyp $(srcdir)/build/config.gypi
+cmd_regen_makefile = cd $(srcdir); /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py -fmake --ignore-environment "--toplevel-dir=." -I/media/Data/node-usrsctp/build/config.gypi -I/usr/lib/node_modules/npm/node_modules/node-gyp/addon.gypi -I/home/swordfeng/.node-gyp/0.12.5/common.gypi "--depth=." "-Goutput_dir=." "--generator-output=build" "-Dlibrary=shared_library" "-Dvisibility=default" "-Dnode_root_dir=/home/swordfeng/.node-gyp/0.12.5" "-Dmodule_root_dir=/media/Data/node-usrsctp" binding.gyp
+Makefile: $(srcdir)/../../../usr/lib/node_modules/npm/node_modules/node-gyp/addon.gypi $(srcdir)/../../../home/swordfeng/.node-gyp/0.12.5/common.gypi $(srcdir)/usrsctplib.gyp $(srcdir)/binding.gyp $(srcdir)/build/config.gypi
 	$(call do_cmd,regen_makefile)
 
 # "all" is a concatenation of the "all" targets from all the included

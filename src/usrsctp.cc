@@ -1,3 +1,4 @@
+#include "usrsctp.h"
 #include <string>
 #include <cstring>
 #include <node.h>
@@ -7,6 +8,7 @@
 #include <iostream>
 #include <cassert>
 #include <cerrno>
+#include <cstdio>
 using std::cout;
 using std::endl;
 using std::cerr;
@@ -137,14 +139,14 @@ namespace usrsctp {
 			struct sockaddr_in *saddr4 = (struct sockaddr_in *)(&saddr);
 			saddr4->sin_family = AF_INET;
 			saddr4->sin_port = port;
-			err = inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
+			err = uv_inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
 			slen = sizeof(struct sockaddr_in);
 		} else if (sock->get_af() == AF_INET6) {
 			// ipv6
 			struct sockaddr_in6 *saddr6 = (struct sockaddr_in6 *)(&saddr);
 			saddr6->sin6_family = AF_INET6;
 			saddr6->sin6_port = port;
-			err = inet_pton(AF_INET6, addrstr.c_str(), &saddr6->sin6_addr);
+			err = uv_inet_pton(AF_INET6, addrstr.c_str(), &saddr6->sin6_addr);
 			slen = sizeof(struct sockaddr_in6);
 		} else {
 			// error
@@ -188,13 +190,13 @@ namespace usrsctp {
 			struct sockaddr_in *saddr4 = (struct sockaddr_in *)(&saddr);
 			saddr4->sin_family = AF_INET;
 			saddr4->sin_port = port;
-			err = inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
+			err = uv_inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
 		} else if (sock->get_af() == AF_INET6) {
 			// ipv6
 			struct sockaddr_in6 *saddr6 = (struct sockaddr_in6 *)(&saddr);
 			saddr6->sin6_family = AF_INET6;
 			saddr6->sin6_port = port;
-			err = inet_pton(AF_INET6, addrstr.c_str(), &saddr6->sin6_addr);
+			err = uv_inet_pton(AF_INET6, addrstr.c_str(), &saddr6->sin6_addr);
 		} else {
 			// error
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Unexpected Error")));
@@ -271,13 +273,13 @@ namespace usrsctp {
 			struct sockaddr_in *saddr4 = (struct sockaddr_in *)(&saddr);
 			saddr4->sin_family = AF_INET;
 			saddr4->sin_port = port;
-			err = inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
+			err = uv_inet_pton(AF_INET, addrstr.c_str(), &saddr4->sin_addr);
 		} else if (sock->get_af() == AF_INET6) {
 			// ipv6
 			struct sockaddr_in6 *saddr6 = (struct sockaddr_in6 *)(&saddr);
 			saddr6->sin6_family = AF_INET6;
 			saddr6->sin6_port = port;
-			err = inet_pton(AF_INET6, addrstr.c_str(), &saddr6->sin6_addr);
+			err = uv_inet_pton(AF_INET6, addrstr.c_str(), &saddr6->sin6_addr);
 		} else {
 			// error
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Unexpected Error")));
@@ -390,7 +392,7 @@ namespace usrsctp {
 		for (int i = 0; i < addrcnt; i++) {
 			if (raddr->sa_family == AF_INET) {
 				auto addr = (struct sockaddr_in *)raddr;
-				if (!inet_ntop(AF_INET, &addr->sin_addr, addrstr, 50)) {
+				if (!uv_inet_ntop(AF_INET, &addr->sin_addr, addrstr, 50)) {
 					isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 					break;
 				}
@@ -401,7 +403,7 @@ namespace usrsctp {
 				raddr = (struct sockaddr *)(addr + 1);
 			} else if (raddr->sa_family == AF_INET6) {
 				auto addr6 = (struct sockaddr_in6 *)raddr;
-				if (!inet_ntop(AF_INET6, &addr6->sin6_addr, addrstr, 50)) {
+				if (!uv_inet_ntop(AF_INET6, &addr6->sin6_addr, addrstr, 50)) {
 					isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 					break;
 				}
@@ -444,7 +446,7 @@ namespace usrsctp {
 		for (int i = 0; i < addrcnt; i++) {
 			if (raddr->sa_family == AF_INET) {
 				auto addr = (struct sockaddr_in *)raddr;
-				if (!inet_ntop(AF_INET, &addr->sin_addr, addrstr, 50)) {
+				if (!uv_inet_ntop(AF_INET, &addr->sin_addr, addrstr, 50)) {
 					isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 					break;
 				}
@@ -466,7 +468,7 @@ namespace usrsctp {
 				raddr = (struct sockaddr *)(addr + 1);
 			} else if (raddr->sa_family == AF_INET6) {
 				auto addr6 = (struct sockaddr_in6 *)raddr;
-				if (!inet_ntop(AF_INET6, &addr6->sin6_addr, addrstr, 50)) {
+				if (!uv_inet_ntop(AF_INET6, &addr6->sin6_addr, addrstr, 50)) {
 					isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 					break;
 				}

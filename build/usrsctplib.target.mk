@@ -6,6 +6,8 @@ DEFS_Debug := \
 	'-DSCTP_PROCESS_LEVEL_LOCKS' \
 	'-DSCTP_SIMPLE_ALLOCATOR' \
 	'-D__Userspace__' \
+	'-DINET=1' \
+	'-DINET6=1' \
 	'-DNODE_GYP_MODULE_NAME=usrsctplib' \
 	'-D_LARGEFILE_SOURCE' \
 	'-D_FILE_OFFSET_BITS=64' \
@@ -44,6 +46,8 @@ DEFS_Release := \
 	'-DSCTP_PROCESS_LEVEL_LOCKS' \
 	'-DSCTP_SIMPLE_ALLOCATOR' \
 	'-D__Userspace__' \
+	'-DINET=1' \
+	'-DINET6=1' \
 	'-DNODE_GYP_MODULE_NAME=usrsctplib' \
 	'-D_LARGEFILE_SOURCE' \
 	'-D_FILE_OFFSET_BITS=64' \

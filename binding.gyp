@@ -15,13 +15,21 @@
 			'include_dirs': [
 				'usrsctp/usrsctplib',
 			],
-			'libraries': [
-				'-lpthread',
-			],
 			"sources": [ 
 				"src/usrsctp.cc", 
 				"src/socket_wrapper_class.cc", 
 				"src/socket_class.cc",
+			],
+			'conditions':[
+				['OS=="win"', {
+					'libraries': [
+						'Ws2_32.lib',
+					],
+				}, { # OS!="win"
+					'libraries': [
+						'-lpthread',
+					],
+				}],
 			]
 		}
 	]

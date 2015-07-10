@@ -1,3 +1,4 @@
+#include "usrsctp.h"
 #include "socket_wrapper_class.h"
 #include <node_buffer.h>
 #include <iostream>
@@ -119,13 +120,13 @@ namespace usrsctp {
 				break;
 			CASETYPE(SCTP_PEER_ADDR_CHANGE)
 				if (notification->sn_paddr_change.spc_aaddr.ss_family == AF_INET) {
-					inet_ntop(AF_INET, 
+					assert(!uv_inet_ntop(AF_INET, 
 						&((struct sockaddr_in *)(&notification->sn_paddr_change.spc_aaddr))->sin_addr,
-						aaddr, 50);
+						aaddr, 50));
 				} else if (notification->sn_paddr_change.spc_aaddr.ss_family == AF_INET6) {
-					inet_ntop(AF_INET6, 
+					assert(!uv_inet_ntop(AF_INET6, 
 						&((struct sockaddr_in6 *)(&notification->sn_paddr_change.spc_aaddr))->sin6_addr,
-						aaddr, 50);
+						aaddr, 50));
 				}
 				switch (notification->sn_paddr_change.spc_state) {
 					CASESTATE(SCTP_ADDR_AVAILABLE);

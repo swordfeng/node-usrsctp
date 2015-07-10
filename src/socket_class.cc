@@ -1,3 +1,4 @@
+#include "usrsctp.h"
 #include "socket_class.h"
 #include <iostream>
 #include <cstring>
@@ -116,8 +117,7 @@ namespace usrsctp {
 	Socket::Socket(int af, int type) {
 		this->af = af;
 		this->type = type;
-		sd = usrsctp_socket(af, type, IPPROTO_SCTP, receive_cb, nullptr, 0, nullptr);
-		assert(sd);
+		assert(sd = usrsctp_socket(af, type, IPPROTO_SCTP, receive_cb, nullptr, 0, nullptr));
 		socket_map.insert(std::make_pair(sd, this));
 		wrapper = new SocketWrapper(this);
 	}
