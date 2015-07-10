@@ -47,7 +47,9 @@ namespace usrsctp {
 		Socket *sock = new Socket(domain, type);
 		
 		const int on = 1;
-		assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) >= 0);
+		if (domain == AF_INET6) {
+			assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) >= 0);
+		}
 		assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) >= 0);
 		
 		struct sctp_event event;
