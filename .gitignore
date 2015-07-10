@@ -1,3 +1,6 @@
+#rfcs & other docs
+*.pdf
+
 # Logs
 logs
 *.log
