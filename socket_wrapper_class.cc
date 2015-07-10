@@ -41,6 +41,7 @@ namespace usrsctp {
 		Local<Function> cons = Local<FunctionTemplate>::New(isolate, constructor_tpl)->GetFunction();
 		Local<Object> inst_local = cons->NewInstance();
 		Wrap(inst_local);
+		Ref();
 	}
 	
 	SocketWrapper::~SocketWrapper() {
@@ -53,6 +54,7 @@ namespace usrsctp {
 	
 	void SocketWrapper::SetInvalid() {
 		sock = nullptr;
+		Unref();
 	}
 
 	Local<Object> SocketWrapper::ToObject() {

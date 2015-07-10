@@ -94,7 +94,7 @@ namespace usrsctp {
 				usrsctp_sendv(*sock, nullptr, 0, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
 			}
 			usrsctp_close(mapitem->first);
-			socket_map.erase(mapitem);
+			delete mapitem->second;
 		}
 		usrsctp_finish();
 		delete recv_info;
