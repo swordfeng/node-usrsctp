@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstring>
 #include <iomanip>
+#include <cassert>
 
 namespace usrsctp {
 	using namespace v8;
@@ -45,7 +46,7 @@ namespace usrsctp {
 	}
 	
 	SocketWrapper::~SocketWrapper() {
-		std::cout << "SocketWrapper deleted" << std::endl;
+		assert(!sock);
 	}
 
 	Socket *SocketWrapper::GetSocket() {
@@ -62,7 +63,6 @@ namespace usrsctp {
 	}
 	
 	void SocketWrapper::recv_cb(void *buf, size_t len, int flags, struct sctp_rcvinfo *info, struct sockaddr_storage *addr) {
-		// todo: give more info
 		Isolate *isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
 		Local<Value> cb_val = handle()->Get(String::NewFromUtf8(isolate, "onData"));

@@ -3,6 +3,7 @@
 #include <cstring>
 #include <node.h>
 #include <iomanip>
+#include <cassert>
 
 namespace usrsctp {
 	
@@ -42,13 +43,13 @@ namespace usrsctp {
 			void *data,	size_t datalen, struct sctp_rcvinfo rcv, int flags, 
 			void *ulp_info) {
 		if (data) {
+			auto socket_item = socket_map.find(sd);
+			assert(socket_item != socket_map.end());
 			uv_mutex_lock(&recv_lock);
 			delete recv_info;
 			delete recv_addr;
 			recv_info = new struct sctp_rcvinfo;
 			recv_addr = new struct sockaddr_storage;
-			auto socket_item = socket_map.find(sd);
-			// if (socket_item == std::unordered_map::end) ...
 			sock = socket_item->second;
 			recv_buf = data;
 			recv_len = datalen;
@@ -116,13 +117,12 @@ namespace usrsctp {
 		this->af = af;
 		this->type = type;
 		sd = usrsctp_socket(af, type, IPPROTO_SCTP, receive_cb, nullptr, 0, nullptr);
-		// if (!sd) ...
+		assert(sd);
 		socket_map.insert(std::make_pair(sd, this));
 		wrapper = new SocketWrapper(this);
 	}
 	
 	Socket::~Socket() {
-		// todo: check and close socket
 		wrapper->SetInvalid();
 		socket_map.erase(sd);
 	}

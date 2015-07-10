@@ -45,12 +45,8 @@ namespace usrsctp {
 		Socket *sock = new Socket(domain, type);
 		
 		const int on = 1;
-		if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
-			// ??
-		}
-		if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
-			// ??
-		}
+		assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) >= 0);
+		assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) >= 0);
 		
 		struct sctp_event event;
 		uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
@@ -61,16 +57,13 @@ namespace usrsctp {
 						  SCTP_PARTIAL_DELIVERY_EVENT,
 						  SCTP_AUTHENTICATION_EVENT,
 						  SCTP_SENDER_DRY_EVENT,
-						  SCTP_NOTIFICATIONS_STOPPED_EVENT,
 						  SCTP_SEND_FAILED_EVENT};
 		memset(&event, 0, sizeof(event));
 		event.se_assoc_id = SCTP_FUTURE_ASSOC;
 		event.se_on = 1;
 		for (size_t i = 0; i < sizeof(event_types) / sizeof(uint16_t); i++) {
 			event.se_type = event_types[i];
-			if (usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(struct sctp_event)) < 0) {
-				// ??
-			}
+			assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(struct sctp_event)) >= 0);
 		}
 		
 		Local<Object> obj = sock->get_wrapper()->ToObject();
@@ -163,8 +156,6 @@ namespace usrsctp {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid address")));
 			return;
 		}
-		
-		//bool flag = args[3]->ToBoolean()->Value();
 		
 		if (usrsctp_bind(*sock, (struct sockaddr *)&saddr, slen) < 0) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
@@ -536,6 +527,8 @@ namespace usrsctp {
 		NODE_SET_METHOD(exports, "bindx", bindx);
 		NODE_SET_METHOD(exports, "listen", listen);
 		NODE_SET_METHOD(exports, "connect", connect);
+		// connectx
+		// peeloff
 		NODE_SET_METHOD(exports, "close", close);
 		NODE_SET_METHOD(exports, "end", end);
 		NODE_SET_METHOD(exports, "abort", abort);
