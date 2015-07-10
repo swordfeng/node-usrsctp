@@ -19,9 +19,9 @@
 				'-lpthread',
 			],
 			"sources": [ 
-				"usrsctp.cc", 
-				"socket_wrapper_class.cc", 
-				"socket_class.cc",
+				"src/usrsctp.cc", 
+				"src/socket_wrapper_class.cc", 
+				"src/socket_class.cc",
 			]
 		}
 	]
