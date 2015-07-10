@@ -83,9 +83,16 @@ namespace usrsctp {
 	}
 	
 	static void empty_callback(uv_handle_t *) {}
-	void Socket::End() {
+	void Socket::End(bool force) {
 		while (socket_map.size() > 0) {
 			auto mapitem = socket_map.begin();
+			if (force) {
+				struct sctp_sndinfo snd_info;
+				memset(&snd_info, 0, sizeof(struct sctp_sndinfo));
+				snd_info.snd_flags = SCTP_ABORT | SCTP_SENDALL;
+				snd_info.snd_assoc_id = SCTP_CURRENT_ASSOC;
+				usrsctp_sendv(*sock, nullptr, 0, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
+			}
 			usrsctp_close(mapitem->first);
 			socket_map.erase(mapitem);
 		}

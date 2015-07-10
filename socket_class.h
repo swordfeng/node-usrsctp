@@ -13,7 +13,7 @@ namespace usrsctp {
 	class Socket {
 		public:
 			static void Init();
-			static void End();
+			static void End(bool force);
 			static void ref();
 			static void unref();
 		private:

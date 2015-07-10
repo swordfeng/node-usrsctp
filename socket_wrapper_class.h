@@ -28,7 +28,6 @@ namespace usrsctp {
 		private:
 			~SocketWrapper();
 			Socket *sock;
-			UniquePersistent<Object> instance;
     };
 }
 

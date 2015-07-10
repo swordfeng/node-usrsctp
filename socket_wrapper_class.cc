@@ -41,7 +41,6 @@ namespace usrsctp {
 		Local<Function> cons = Local<FunctionTemplate>::New(isolate, constructor_tpl)->GetFunction();
 		Local<Object> inst_local = cons->NewInstance();
 		Wrap(inst_local);
-		instance.Reset(isolate, inst_local);
 	}
 	
 	SocketWrapper::~SocketWrapper() {
@@ -57,15 +56,14 @@ namespace usrsctp {
 	}
 
 	Local<Object> SocketWrapper::ToObject() {
-		Isolate *isolate = Isolate::GetCurrent();
-		return Local<Object>::New(isolate, instance);
+		return handle();
 	}
 	
 	void SocketWrapper::recv_cb(void *buf, size_t len, int flags, struct sctp_rcvinfo *info, struct sockaddr_storage *addr) {
 		// todo: give more info
 		Isolate *isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
-		Local<Value> cb_val = Local<Object>::New(isolate, instance)->Get(String::NewFromUtf8(isolate, "onData"));
+		Local<Value> cb_val = handle()->Get(String::NewFromUtf8(isolate, "onData"));
 		Local<Function> cb = Local<Function>::Cast(cb_val);
 		// warning: this may not work on other versions of node.js
 		// if this problem is critical, it should be changed in the future
@@ -90,7 +88,7 @@ namespace usrsctp {
 		Isolate *isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
 		
-		Local<Value> cb_val = Local<Object>::New(isolate, instance)->Get(String::NewFromUtf8(isolate, "onNotification"));
+		Local<Value> cb_val = handle()->Get(String::NewFromUtf8(isolate, "onNotification"));
 		Local<Function> cb = Local<Function>::Cast(cb_val);
 		
 		Local<Object> notif_obj = Object::New(isolate);

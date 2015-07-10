@@ -515,7 +515,7 @@ namespace usrsctp {
 	}
 	
 	void finish(const FunctionCallbackInfo<Value>& args) {
-		Socket::End();
+		Socket::End(args[0]->ToBoolean()->Value());
 	}
 	
 	void ref(const FunctionCallbackInfo<Value>& args) {
