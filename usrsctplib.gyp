@@ -17,11 +17,13 @@
     'include_dirs': [
       'usrsctp/usrsctplib/',
       'usrsctp/usrsctplib/netinet',
+      'usrsctp/usrsctplib/netinet6',
     ],
     'direct_dependent_settings': {
       'include_dirs': [
         'usrsctp/usrsctplib/',
         'usrsctp/usrsctplib/netinet',
+        'usrsctp/usrsctplib/netinet6',
       ],
     },
     'conditions': [
@@ -125,19 +127,19 @@
             # Manually setting WINVER and _WIN32_WINNT is needed because Chrome
             # sets WINVER to a newer version of  windows. But compiling usrsctp
             # this way would is incompatible  with windows XP.
-            'WINVER=0x0502',
-            '_WIN32_WINNT=0x0502',
+            # 'WINVER=0x0502',
+            # '_WIN32_WINNT=0x0502',
           ],
           'defines!': [
             # Remove Chrome's WINVER defines to avoid redefinition warnings.
-            'WINVER=0x0602',
-            '_WIN32_WINNT=0x0602',
+            # 'WINVER=0x0602',
+            # '_WIN32_WINNT=0x0602',
           ],
-          'cflags!': [ '/W3', '/WX' ],
-          'cflags': [ '/w' ],
+          # 'cflags!': [ '/W3', '/WX' ],
+          # 'cflags': [ '/w' ],
           # TODO(ldixon) : Remove this disabling of warnings by pushing a
           # fix upstream to usrsctp
-          'msvs_disabled_warnings': [ 4002, 4013, 4018, 4133, 4267, 4313, 4700 ],
+          # 'msvs_disabled_warnings': [ 4002, 4013, 4018, 4133, 4267, 4313, 4700 ],
         }, {  # OS != "win",
           'defines': [
             'NON_WINDOWS_DEFINE',
