@@ -27,7 +27,7 @@ namespace usrsctp {
 				String::NewFromUtf8(isolate, "Invalid port number")));
 			return;
 		}
-		usrsctp_init(static_cast<uint16_t>(udp_port), nullptr, nullptr);
+		usrsctp_init(static_cast<uint16_t>(udp_port), nullptr, (void (*)(const char*, ...))printf);
 	}
 
 	//usrsctp_socket
@@ -154,7 +154,7 @@ namespace usrsctp {
 			return;
 		}
 		
-		if (err != 1) {
+		if (err) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid address")));
 			return;
 		}
@@ -203,7 +203,7 @@ namespace usrsctp {
 			return;
 		}
 		
-		if (err != 1) {
+		if (err) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid address")));
 			return;
 		}
@@ -286,7 +286,7 @@ namespace usrsctp {
 			return;
 		}
 		
-		if (err != 1) {
+		if (err) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid address")));
 			return;
 		}
@@ -392,7 +392,7 @@ namespace usrsctp {
 		for (int i = 0; i < addrcnt; i++) {
 			if (raddr->sa_family == AF_INET) {
 				auto addr = (struct sockaddr_in *)raddr;
-				if (!uv_inet_ntop(AF_INET, &addr->sin_addr, addrstr, 50)) {
+				if (uv_inet_ntop(AF_INET, &addr->sin_addr, addrstr, 50)) {
 					isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 					break;
 				}
@@ -403,7 +403,7 @@ namespace usrsctp {
 				raddr = (struct sockaddr *)(addr + 1);
 			} else if (raddr->sa_family == AF_INET6) {
 				auto addr6 = (struct sockaddr_in6 *)raddr;
-				if (!uv_inet_ntop(AF_INET6, &addr6->sin6_addr, addrstr, 50)) {
+				if (uv_inet_ntop(AF_INET6, &addr6->sin6_addr, addrstr, 50)) {
 					isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 					break;
 				}
@@ -446,7 +446,7 @@ namespace usrsctp {
 		for (int i = 0; i < addrcnt; i++) {
 			if (raddr->sa_family == AF_INET) {
 				auto addr = (struct sockaddr_in *)raddr;
-				if (!uv_inet_ntop(AF_INET, &addr->sin_addr, addrstr, 50)) {
+				if (uv_inet_ntop(AF_INET, &addr->sin_addr, addrstr, 50)) {
 					isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 					break;
 				}
@@ -468,7 +468,7 @@ namespace usrsctp {
 				raddr = (struct sockaddr *)(addr + 1);
 			} else if (raddr->sa_family == AF_INET6) {
 				auto addr6 = (struct sockaddr_in6 *)raddr;
-				if (!uv_inet_ntop(AF_INET6, &addr6->sin6_addr, addrstr, 50)) {
+				if (uv_inet_ntop(AF_INET6, &addr6->sin6_addr, addrstr, 50)) {
 					isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 					break;
 				}

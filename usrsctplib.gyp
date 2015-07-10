@@ -10,7 +10,9 @@
       'SCTP_PROCESS_LEVEL_LOCKS',
       'SCTP_SIMPLE_ALLOCATOR',
       '__Userspace__',
-      # 'SCTP_DEBUG', # Uncomment for SCTP debugging.
+      'INET=1',
+      'INET6=1',
+      'SCTP_DEBUG', # Uncomment for SCTP debugging.
     ],
     'include_dirs': [
       'usrsctp/usrsctplib/',
@@ -96,9 +98,10 @@
         ['OS=="linux" or OS=="android"', {
           'defines': [
             '__Userspace_os_Linux',
+            '_GNU_SOURCE',
           ],
           'cflags!': [ '-Werror', '-Wall' ],
-          'cflags': [ '-w' ],
+          'cflags': [ '-w', '-pedantic' ],
         }],
         ['OS=="mac" or OS=="ios"', {
           'defines': [

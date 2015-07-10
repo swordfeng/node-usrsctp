@@ -8,10 +8,12 @@ DEFS_Debug := \
 	'-D__Userspace__' \
 	'-DINET=1' \
 	'-DINET6=1' \
+	'-DSCTP_DEBUG' \
 	'-DNODE_GYP_MODULE_NAME=usrsctplib' \
 	'-D_LARGEFILE_SOURCE' \
 	'-D_FILE_OFFSET_BITS=64' \
 	'-D__Userspace_os_Linux' \
+	'-D_GNU_SOURCE' \
 	'-DNON_WINDOWS_DEFINE' \
 	'-DDEBUG' \
 	'-D_DEBUG'
@@ -24,6 +26,7 @@ CFLAGS_Debug := \
 	-Wno-unused-parameter \
 	-m64 \
 	-w \
+	-pedantic \
 	-g \
 	-O0
 
@@ -48,10 +51,12 @@ DEFS_Release := \
 	'-D__Userspace__' \
 	'-DINET=1' \
 	'-DINET6=1' \
+	'-DSCTP_DEBUG' \
 	'-DNODE_GYP_MODULE_NAME=usrsctplib' \
 	'-D_LARGEFILE_SOURCE' \
 	'-D_FILE_OFFSET_BITS=64' \
 	'-D__Userspace_os_Linux' \
+	'-D_GNU_SOURCE' \
 	'-DNON_WINDOWS_DEFINE'
 
 # Flags passed to all source files.
@@ -62,6 +67,7 @@ CFLAGS_Release := \
 	-Wno-unused-parameter \
 	-m64 \
 	-w \
+	-pedantic \
 	-O3 \
 	-ffunction-sections \
 	-fdata-sections \
