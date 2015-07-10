@@ -12,7 +12,7 @@
       '__Userspace__',
       'INET=1',
       'INET6=1',
-      'SCTP_DEBUG', # Uncomment for SCTP debugging.
+      # 'SCTP_DEBUG', # Uncomment for SCTP debugging.
     ],
     'include_dirs': [
       'usrsctp/usrsctplib/',

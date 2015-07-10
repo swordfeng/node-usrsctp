@@ -9,9 +9,6 @@
 #include <cassert>
 #include <cerrno>
 #include <cstdio>
-using std::cout;
-using std::endl;
-using std::cerr;
 
 namespace usrsctp {
 	using namespace v8;
@@ -27,7 +24,7 @@ namespace usrsctp {
 				String::NewFromUtf8(isolate, "Invalid port number")));
 			return;
 		}
-		usrsctp_init(static_cast<uint16_t>(udp_port), nullptr, (void (*)(const char*, ...))printf);
+		usrsctp_init(static_cast<uint16_t>(udp_port), nullptr, nullptr);
 	}
 
 	//usrsctp_socket
