@@ -8,7 +8,7 @@
 
 namespace usrsctp {
 	
-	std::unordered_map<struct socket*, Socket*> Socket::socket_map;
+	std::unordered_set<Socket *> Socket::socket_list;
 	Socket *Socket::sock;
 	uv_mutex_t Socket::recv_lock;
 	uv_async_t Socket::recv_event;
@@ -43,15 +43,15 @@ namespace usrsctp {
 	int Socket::receive_cb(struct socket *sd, union sctp_sockstore addr,
 			void *data,	size_t datalen, struct sctp_rcvinfo rcv, int flags, 
 			void *ulp_info) {
+		Socket *sockptr = (Socket *)ulp_info;
 		if (data) {
-			auto socket_item = socket_map.find(sd);
-			assert(socket_item != socket_map.end());
+			assert(socket_list.find(sockptr) != socket_list.end());
 			uv_mutex_lock(&recv_lock);
 			delete recv_info;
 			delete recv_addr;
 			recv_info = new struct sctp_rcvinfo;
 			recv_addr = new struct sockaddr_storage;
-			sock = socket_item->second;
+			sock = sockptr;
 			recv_buf = data;
 			recv_len = datalen;
 			recv_flags = flags;
@@ -84,25 +84,26 @@ namespace usrsctp {
 		uv_unref((uv_handle_t *)&recv_event);
 	}
 	
-	static void empty_callback(uv_handle_t *) {}
 	void Socket::End(bool force) {
-		while (socket_map.size() > 0) {
-			auto mapitem = socket_map.begin();
+		uv_mutex_lock(&recv_lock);
+		while (socket_list.begin() != socket_list.end()) {
+			auto sock = socket_list.begin();
 			if (force) {
 				struct sctp_sndinfo snd_info;
 				memset(&snd_info, 0, sizeof(struct sctp_sndinfo));
-				snd_info.snd_flags = SCTP_ABORT | SCTP_SENDALL;
+				snd_info.snd_flags = SCTP_ABORT|SCTP_SENDALL;
 				snd_info.snd_assoc_id = SCTP_CURRENT_ASSOC;
-				usrsctp_sendv(*sock, nullptr, 0, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
+				usrsctp_sendv(**sock, nullptr, 0, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
 			}
-			usrsctp_close(mapitem->first);
-			delete mapitem->second;
+			usrsctp_close(**sock);
+			delete *sock;
 		}
 		usrsctp_finish();
 		delete recv_info;
 		delete recv_addr;
 		if (recv_buf) free(recv_buf);
-		uv_close((uv_handle_t *)&recv_event, empty_callback);
+		uv_close((uv_handle_t *)&recv_event, [](uv_handle_t *){});
+		uv_mutex_unlock(&recv_lock);
 		uv_mutex_destroy(&recv_lock);
 	}
 	
@@ -117,14 +118,18 @@ namespace usrsctp {
 	Socket::Socket(int af, int type) {
 		this->af = af;
 		this->type = type;
-		assert(sd = usrsctp_socket(af, type, IPPROTO_SCTP, receive_cb, nullptr, 0, nullptr));
-		socket_map.insert(std::make_pair(sd, this));
+		assert(sd = usrsctp_socket(af, type, IPPROTO_SCTP, receive_cb, nullptr, 0, this));
+		socket_list.insert(this);
 		wrapper = new SocketWrapper(this);
+		if (type == SOCK_STREAM) {
+			int on = 1;
+			usrsctp_setsockopt(sd, IPPROTO_SCTP, SCTP_REUSE_PORT, &on, sizeof(int));
+		}
 	}
 	
 	Socket::~Socket() {
 		wrapper->SetInvalid();
-		socket_map.erase(sd);
+		socket_list.erase(this);
 	}
 	
 	SocketWrapper *Socket::get_wrapper() {

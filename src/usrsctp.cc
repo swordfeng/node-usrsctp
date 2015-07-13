@@ -35,14 +35,10 @@ namespace usrsctp {
 		
 		int domain = args[0]->Uint32Value() == 4 ? AF_INET : AF_INET6;
 		
-		/*
-		int type = type_str == "stream" ? SOCK_STREAM : SOCK_SEQPACKET;
-		*/
-		// now we only support creating one-to-many socket
-		int type = SOCK_SEQPACKET;
+		int type = args[1]->ToBoolean()->Value() ? SOCK_STREAM : SOCK_SEQPACKET;
 		
 		Socket *sock = new Socket(domain, type);
-		
+
 		const int on = 1;
 		if (domain == AF_INET6) {
 			assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) >= 0);
@@ -235,10 +231,6 @@ namespace usrsctp {
 		if (usrsctp_listen(*sock, flag ? 1 : 0) < 0) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 			return;
-		}
-		
-		if (sock->get_type() == SOCK_STREAM) {
-			// todo: needs accept
 		}
 	}
 	
@@ -507,7 +499,7 @@ namespace usrsctp {
 	}
 	
 	void finish(const FunctionCallbackInfo<Value>& args) {
-		Socket::End(args[0]->ToBoolean()->Value());
+		Socket::End(true);
 	}
 	
 	void ref(const FunctionCallbackInfo<Value>& args) {

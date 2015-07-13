@@ -1,7 +1,7 @@
 #ifndef NODE_SCTP_SOCKET_CTX_H
 #define NODE_SCTP_SOCKET_CTX_H
 
-#include <unordered_map>
+#include <unordered_set>
 #include <uv.h>
 #include <usrsctp.h>
 #include "socket_wrapper_class.h"
@@ -22,7 +22,7 @@ namespace usrsctp {
 				void *data,	size_t datalen, struct sctp_rcvinfo rcv, int flags, 
 				void *ulp_info);
 			
-			static std::unordered_map<struct socket*, Socket*> socket_map;
+			static std::unordered_set<Socket*> socket_list;
 			static Socket *sock;
 			static uv_mutex_t recv_lock;
 			static uv_async_t recv_event;
@@ -42,6 +42,7 @@ namespace usrsctp {
 			}
 			~Socket();
 		private:
+			//Socket(int af, int type, struct socket *sd);
 			struct socket *sd;
 			SocketWrapper *wrapper;
 			int af;
