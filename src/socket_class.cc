@@ -110,7 +110,6 @@ namespace usrsctp {
 		uv_mutex_trylock(&recv_lock);
 		decltype(socket_set.begin()) psock;
 		while ((psock = socket_set.begin()) != socket_set.end()) {
-			/*
 			if (force) {
 				struct sctp_sndinfo snd_info;
 				memset(&snd_info, 0, sizeof(struct sctp_sndinfo));
@@ -118,7 +117,6 @@ namespace usrsctp {
 				snd_info.snd_assoc_id = SCTP_CURRENT_ASSOC;
 				usrsctp_sendv(**psock, nullptr, 0, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
 			}
-			*/
 			usrsctp_close(**psock);
 			delete *psock;
 		}
