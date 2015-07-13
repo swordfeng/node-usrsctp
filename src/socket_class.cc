@@ -36,11 +36,11 @@ namespace usrsctp {
 		assert(socket_set.find(sock) != socket_set.end());
 		
 		if (sock->get_sd() != recv_sd) {
+			assert(sock->get_type() == SOCK_STREAM);
 			auto sd_map_item = sd_map.find(recv_sd);
 			if (sd_map_item != sd_map.end()) {
 				sock = sd_map_item->second;
 			} else {
-				assert(sock->get_type() == SOCK_STREAM);
 				// so now we get a new sd
 				new_sock = new Socket(sock, recv_sd);
 			}
