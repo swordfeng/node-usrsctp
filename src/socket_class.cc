@@ -8,7 +8,8 @@
 
 namespace usrsctp {
 	
-	std::unordered_set<Socket*> Socket::socket_set;
+	std::unordered_set<Socket *> Socket::socket_set;
+	std::unordered_map<struct socket *,Socket *> Socket::sd_map;
 	Socket *Socket::recv_sock;
 	uv_mutex_t Socket::recv_lock;
 	uv_async_t Socket::recv_event;
@@ -35,9 +36,14 @@ namespace usrsctp {
 		assert(socket_set.find(sock) != socket_set.end());
 		
 		if (sock->get_sd() != recv_sd) {
-			assert(sock->get_type() != SOCK_STREAM);
-			// so now we get a new sd
-			new_sock = new Socket(sock, recv_sd);
+			auto sd_map_item = sd_map.find(recv_sd);
+			if (sd_map_item != sd_map.end()) {
+				sock = sd_map_item->second;
+			} else {
+				assert(sock->get_type() == SOCK_STREAM);
+				// so now we get a new sd
+				new_sock = new Socket(sock, recv_sd);
+			}
 		}
 		
 		uv_mutex_unlock(&recv_lock);
@@ -104,6 +110,7 @@ namespace usrsctp {
 		uv_mutex_trylock(&recv_lock);
 		decltype(socket_set.begin()) psock;
 		while ((psock = socket_set.begin()) != socket_set.end()) {
+			/*
 			if (force) {
 				struct sctp_sndinfo snd_info;
 				memset(&snd_info, 0, sizeof(struct sctp_sndinfo));
@@ -111,6 +118,7 @@ namespace usrsctp {
 				snd_info.snd_assoc_id = SCTP_CURRENT_ASSOC;
 				usrsctp_sendv(**psock, nullptr, 0, nullptr, 0, &snd_info, sizeof(snd_info), SCTP_SENDV_SNDINFO, 0);
 			}
+			*/
 			usrsctp_close(**psock);
 			delete *psock;
 		}
@@ -137,6 +145,7 @@ namespace usrsctp {
 		this->priv_sock = nullptr;
 		assert(sd = usrsctp_socket(af, type, IPPROTO_SCTP, receive_cb, nullptr, 0, this));
 		socket_set.insert(this);
+		sd_map.insert(std::make_pair(sd, this));
 		wrapper = new SocketWrapper(this);
 	}
 	
@@ -147,12 +156,14 @@ namespace usrsctp {
 		this->priv_sock = old_sock;
 		usrsctp_set_ulpinfo(sd, this);
 		socket_set.insert(this);
+		sd_map.insert(std::make_pair(sd, this));
 		wrapper = new SocketWrapper(this);
 	}
 	
 	Socket::~Socket() {
 		wrapper->SetInvalid();
 		socket_set.erase(this);
+		sd_map.erase(sd);
 	}
 	
 	SocketWrapper *Socket::get_wrapper() {

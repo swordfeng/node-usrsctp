@@ -2,6 +2,7 @@
 #define NODE_SCTP_SOCKET_CTX_H
 
 #include <unordered_set>
+#include <unordered_map>
 #include <uv.h>
 #include <usrsctp.h>
 #include "socket_wrapper_class.h"
@@ -23,6 +24,8 @@ namespace usrsctp {
 				void *ulp_info);
 			
 			static std::unordered_set<Socket *> socket_set;
+			static std::unordered_map<struct socket *, Socket *> sd_map;
+			
 			static uv_mutex_t recv_lock;
 			static uv_async_t recv_event;
 			static Socket *recv_sock;
