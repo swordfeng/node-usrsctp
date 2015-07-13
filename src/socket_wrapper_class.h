@@ -24,7 +24,7 @@ namespace usrsctp {
 			Socket *GetSocket();
 			void SetInvalid();
 			void recv_cb(void *buf, size_t len, int flags, struct sctp_rcvinfo *info, struct sockaddr_storage *addr);
-			void notif_cb(union sctp_notification *notification);
+			void notif_cb(union sctp_notification *notification, Socket *new_sock);
 		private:
 			~SocketWrapper();
 			Socket *sock;

@@ -41,7 +41,10 @@ namespace usrsctp {
 
 		const int on = 1;
 		if (domain == AF_INET6) {
-			assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) >= 0);
+			assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, &on, sizeof(int)) >= 0);
+		}
+		if (type == SOCK_STREAM) {
+			assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_REUSE_PORT, &on, sizeof(int)) >= 0);
 		}
 		assert(usrsctp_setsockopt(*sock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) >= 0);
 		

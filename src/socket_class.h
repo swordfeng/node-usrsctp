@@ -22,10 +22,11 @@ namespace usrsctp {
 				void *data,	size_t datalen, struct sctp_rcvinfo rcv, int flags, 
 				void *ulp_info);
 			
-			static std::unordered_set<Socket*> socket_list;
-			static Socket *sock;
+			static std::unordered_set<Socket *> socket_set;
 			static uv_mutex_t recv_lock;
 			static uv_async_t recv_event;
+			static Socket *recv_sock;
+			static struct socket *recv_sd;
 			static void *recv_buf;
 			static size_t recv_len;
 			static int recv_flags; 
@@ -42,11 +43,12 @@ namespace usrsctp {
 			}
 			~Socket();
 		private:
-			//Socket(int af, int type, struct socket *sd);
+			Socket(Socket *old_sock, struct socket *sd);
 			struct socket *sd;
 			SocketWrapper *wrapper;
 			int af;
 			int type;
+			Socket *priv_sock;
 	};
 }
 

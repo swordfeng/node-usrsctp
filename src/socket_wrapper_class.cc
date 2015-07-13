@@ -87,7 +87,7 @@ namespace usrsctp {
 		cb->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 	}
 	
-	void SocketWrapper::notif_cb(union sctp_notification *notification) {
+	void SocketWrapper::notif_cb(union sctp_notification *notification, Socket *new_sock) {
 		Isolate *isolate = Isolate::GetCurrent();
 		HandleScope scope(isolate);
 		
@@ -163,6 +163,9 @@ namespace usrsctp {
 #undef CASETYPE
 #undef CASESTATE
 
+		if (new_sock) {
+			notif_obj->Set(String::NewFromUtf8(isolate, "new_sock"), new_sock->get_wrapper()->ToObject());
+		}
 		const unsigned int argc = 1;
 		Local<Value> argv[argc] = { notif_obj };
 		cb->Call(isolate->GetCurrentContext()->Global(), argc, argv);
