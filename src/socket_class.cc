@@ -105,7 +105,6 @@ namespace usrsctp {
 		uv_unref((uv_handle_t *)&recv_event);
 	}
 	
-	static void empty_callback(uv_handle_t *) {}
 	void Socket::End(bool force) {
 		uv_mutex_trylock(&recv_lock);
 		decltype(socket_set.begin()) psock;
@@ -124,7 +123,7 @@ namespace usrsctp {
 		delete recv_info;
 		delete recv_addr;
 		if (recv_buf) free(recv_buf);
-		uv_close((uv_handle_t *)&recv_event, empty_callback);
+		uv_close((uv_handle_t *)&recv_event, [](uv_handle_t *){});
 		uv_mutex_unlock(&recv_lock);
 		uv_mutex_destroy(&recv_lock);
 	}
