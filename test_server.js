@@ -1,21 +1,6 @@
-var usrsctp = require('./build/Release/usrsctp');
+var usrsctp = require('./lib/usrsctp.js');
 
-usrsctp.init(9899);
-var t = usrsctp.socket(6, "seqpacket");
-usrsctp.ref();
-
-t.onData = function(buf, info) {
-	console.log("DATA:", usrsctp.getRemoteAddress(t, info.assoc_id));
-};
-
-t.onNotification = function(notif) {
-	console.log("NOTIFICATION:", notif);
-};
-
-console.log("bind");
-usrsctp.bind(t, '::', 1234, true);
-
-console.log("listen");
-usrsctp.listen(t, true);
-console.log(usrsctp.getLocalAddress(t, 0));
-
+var t = new usrsctp.Socket({style:'stream', family:6}, function(c) {
+//	console.log(c);
+});
+t.listen(1234, 1, function() {console.log('listening');});
