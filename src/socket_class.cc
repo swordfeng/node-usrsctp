@@ -35,8 +35,8 @@ namespace usrsctp {
 		
 		assert(socket_set.find(sock) != socket_set.end());
 		
-		if (sock->get_sd() != recv_sd) {
-			assert(sock->get_type() == SOCK_STREAM);
+		if (sock->sd != recv_sd) {
+			assert(sock->type == SOCK_STREAM);
 			auto sd_map_item = sd_map.find(recv_sd);
 			if (sd_map_item != sd_map.end()) {
 				sock = sd_map_item->second;
@@ -65,6 +65,7 @@ namespace usrsctp {
 	int Socket::receive_cb(struct socket *sd, union sctp_sockstore addr,
 			void *data,	size_t datalen, struct sctp_rcvinfo rcv, int flags, 
 			void *ulp_info) {
+		std::cout << "RECV HERE" << std::endl;
 		if (data) {
 			uv_mutex_lock(&recv_lock);
 			delete recv_info;
@@ -89,7 +90,7 @@ namespace usrsctp {
 			memcpy(recv_addr, &addr, addrlen);
 			uv_async_send(&recv_event);
 		} else {
-			// shutdown - will have a notification
+			// shutdown - will have a notification?
 		}
 		return 1;
 	}
@@ -109,7 +110,7 @@ namespace usrsctp {
 		uv_mutex_trylock(&recv_lock);
 		decltype(socket_set.begin()) psock;
 		while ((psock = socket_set.begin()) != socket_set.end()) {
-			if (force) {
+			if (force && ((*psock)->type == SOCK_SEQPACKET || (*psock)->priv_sock == nullptr)) {
 				struct sctp_sndinfo snd_info;
 				memset(&snd_info, 0, sizeof(struct sctp_sndinfo));
 				snd_info.snd_flags = SCTP_ABORT | SCTP_SENDALL;
@@ -119,6 +120,7 @@ namespace usrsctp {
 			usrsctp_close(**psock);
 			delete *psock;
 		}
+		std::cout << "finishing" << std::endl;
 		usrsctp_finish();
 		delete recv_info;
 		delete recv_addr;

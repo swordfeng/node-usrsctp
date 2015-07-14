@@ -215,7 +215,7 @@ namespace usrsctp {
 	}
 	
 	//usrsctp_listen
-	//.listen(socket, flag = true (on), false (off))
+	//.listen(socket, backlog)
 	//create accept thread when needed
 	void listen(const FunctionCallbackInfo<Value>& args) {
 		Isolate* isolate = Isolate::GetCurrent();
@@ -229,9 +229,9 @@ namespace usrsctp {
 			return;
 		}
 		
-		bool flag = args[1]->ToBoolean()->Value();
+		unsigned int backlog = args[1]->Uint32Value();
 		
-		if (usrsctp_listen(*sock, flag ? 1 : 0) < 0) {
+		if (usrsctp_listen(*sock, backlog > SOMAXCONN ? SOMAXCONN : backlog) < 0) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 			return;
 		}
