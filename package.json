@@ -1,0 +1,32 @@
+{
+  "name": "usrsctp",
+  "version": "0.0.1",
+  "description": "usrsctp binding for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "test.js",
+    "install": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/swordfeng/node-usrsctp.git"
+  },
+  "keywords": [
+    "usrsctp",
+    "sctp",
+    "udp",
+    "protocol",
+    "network"
+  ],
+  "author": "swordfeng",
+  "license": "MIT",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/swordfeng/node-usrsctp/issues"
+  },
+  "homepage": "https://github.com/swordfeng/node-usrsctp#readme",
+  "dependencies": {
+    "async": "^1.3.0",
+    "underscore": "^1.8.3"
+  }
+}
