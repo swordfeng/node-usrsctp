@@ -35,13 +35,15 @@ namespace usrsctp {
 		
 		assert(socket_set.find(sock) != socket_set.end());
 		
+		bool to_accept = false;
+		
 		if (sock->sd != recv_sd) {
 			assert(sock->type == SOCK_STREAM);
 			auto sd_map_item = sd_map.find(recv_sd);
 			if (sd_map_item != sd_map.end()) {
 				sock = sd_map_item->second;
 			} else {
-				// so now we get a new sd
+				// so now we should get a new sd
 				new_sock = new Socket(sock, recv_sd);
 			}
 		}
@@ -65,7 +67,6 @@ namespace usrsctp {
 	int Socket::receive_cb(struct socket *sd, union sctp_sockstore addr,
 			void *data,	size_t datalen, struct sctp_rcvinfo rcv, int flags, 
 			void *ulp_info) {
-		std::cout << "RECV HERE" << std::endl;
 		if (data) {
 			uv_mutex_lock(&recv_lock);
 			delete recv_info;
@@ -91,6 +92,8 @@ namespace usrsctp {
 			uv_async_send(&recv_event);
 		} else {
 			// shutdown - will have a notification?
+			std::cout << "no data" << std::endl;
+			usrsctp_close(sd);
 		}
 		return 1;
 	}
@@ -181,4 +184,7 @@ namespace usrsctp {
 		return type;
 	}
 	
+	uv_thread_t * Socket::get_thread() {
+		return &accept_thread;
+	}
 }

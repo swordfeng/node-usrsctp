@@ -45,6 +45,7 @@ namespace usrsctp {
 				return sd;
 			}
 			~Socket();
+			uv_thread_t *get_thread();
 		private:
 			Socket(Socket *old_sock, struct socket *sd);
 			struct socket *sd;
@@ -52,6 +53,7 @@ namespace usrsctp {
 			int af;
 			int type;
 			Socket *priv_sock;
+			uv_thread_t accept_thread;
 	};
 }
 

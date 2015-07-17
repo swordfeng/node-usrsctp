@@ -235,6 +235,23 @@ namespace usrsctp {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, strerror(errno))));
 			return;
 		}
+		
+		if (sock->get_type() == SOCK_STREAM) {
+			// start accept thread
+			uv_thread_create(sock->get_thread(), [](void *arg) {
+				std::cout << "accept thread" << std::endl;
+				Socket *sock = (Socket *)arg;
+				struct socket *sd = sock->get_sd();
+				struct socket *new_sd;
+				struct sockaddr_storage saddr;
+				socklen_t len = sizeof(struct sockaddr_storage);
+				while ((new_sd = usrsctp_accept(sd, (struct sockaddr *)&saddr, &len)) != nullptr) {
+					std::cout << "accept" << std::endl;
+				}
+				std::cout << "accept thread exit" << std::endl;
+			}, sock);
+		}
+		
 	}
 	
 	//usrsctp_peeloff
@@ -512,6 +529,25 @@ namespace usrsctp {
 	void unref(const FunctionCallbackInfo<Value>& args) {
 		Socket::unref();
 	}
+	
+	void set_recvbuf_single(const FunctionCallbackInfo<Value>& args) {
+		
+		Isolate* isolate = Isolate::GetCurrent();
+		HandleScope scope(isolate);
+		
+		SocketWrapper *wrapper = SocketWrapper::FromObject(args[0]->ToObject());
+		if (!wrapper) return;
+		Socket *sock = wrapper->GetSocket();
+		if (!sock) {
+			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid socket")));
+			return;
+		}
+		
+		int rcvbufsize = args[1]->Uint32Value();
+		if (usrsctp_setsockopt(*sock, SOL_SOCKET, SO_RCVBUF, &rcvbufsize, sizeof(int)) < 0) {
+			perror("setsockopt: rcvbuf");
+		}
+	}
 
 	void Init(Handle<Object> exports) {
 		Socket::Init();
@@ -535,6 +571,7 @@ namespace usrsctp {
 		NODE_SET_METHOD(exports, "finish", finish);
 		NODE_SET_METHOD(exports, "ref", ref);
 		NODE_SET_METHOD(exports, "unref", unref);
+		NODE_SET_METHOD(exports, "setSockRecvBufferSize", set_recvbuf_single);
 	}
 
 	NODE_MODULE(usrsctp, Init)

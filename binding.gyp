@@ -8,7 +8,7 @@
 			'defines': [
 				'INET=1',
 				'INET6=1',
-				'SCTP_DEBUG',
+				'__Userspace__',
 			],
 			'include_dirs': [
 				'usrsctp/usrsctplib',
