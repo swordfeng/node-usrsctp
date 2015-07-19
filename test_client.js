@@ -1,10 +1,14 @@
-var usrsctp = require('./build/Release/usrsctp');
-
+var usrsctp = require('./lib/usrsctp.js');
 
 usrsctp.init(15000);
-var t = usrsctp.socket(6, "seqpacket");
-//usrsctp.bind(t, '::', 5000);
-var aid = usrsctp.connect(t, '::ffff:127.0.0.1', 5001, 9899);
+var sock = usrsctp.Socket({family: 6, style: "seqpacket"});
+sock.on('error', console.log);
+console.log(sock);
+sock.connect(5001, '::ffff:127.0.0.1', function(assoc) {
+	console.log(assoc);
+	process.exit();
+});
+/*
 var count = 0;
 var timer = setInterval(function(){
 	if (count < 2) {
@@ -16,8 +20,4 @@ var timer = setInterval(function(){
 	}
 	count++;
 },500);
-
-process.on('exit', function() {
-	console.log('exiting');
-	usrsctp.finish(false);
-});
+*/
