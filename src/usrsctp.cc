@@ -393,7 +393,6 @@ namespace usrsctp {
 		int addrcnt = usrsctp_getladdrs(*sock, assoc_id, &raddrs);
 		if (addrcnt < 0) {
 			isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "getladdrs")));
-			usrsctp_freeladdrs(raddrs);
 			return;
 		}
 		Local<Array> addrarr = Array::New(isolate, addrcnt);
